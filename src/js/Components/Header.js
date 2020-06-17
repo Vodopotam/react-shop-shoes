@@ -1,0 +1,223 @@
+import React from 'react';
+import { Link } from 'react-router-dom';
+import {
+  getData,
+  headerMainSearchVisibility,
+  headerHiddenPanelProfileVisibility,
+  headerHiddenPanelBasketVisibility,
+  mainSubmenuVisibility,
+} from '../../js/script';
+import logo from '../../img/header-logo.png';
+import Cart from '../../js/Components/Cart.js';
+import DropdownMenu from '../../js/Components/DropdownMenu';
+import '../../css/style.css';
+
+class Header extends React.Component {
+  constructor(props) {
+    super(props);
+
+    this.state = {
+      categories: [],
+      products: [],
+      currentCategory: 0,
+      filters: null,
+      search: '',
+      redirect: false,
+      loading: false,
+    };
+  }
+
+  componentDidMount() {
+    this.setState({ loading: true });
+
+    getData(`categories`).then(result => {
+      this.setState({
+        categories: result.data,
+        loading: false,
+      });
+    });
+
+    getData(`products`).then(result => {
+      this.setState({
+        products: result.data,
+        loading: false,
+      });
+    });
+
+    getData(`filters`).then(result => {
+      this.setState({
+        filters: result.data,
+        loading: false,
+      });
+    });
+  }
+
+  componentDidUpdate() {
+    if (!this.menuItem) return null;
+
+    Array.from(this.menuItem.children).map((item, i) => {
+      item.onclick = event => {
+        const activeCategory = this.state.categories.find(
+          el =>
+            el.title.toLowerCase() === item.children[0].innerText.toLowerCase()
+        );
+        this.setState({
+          currentCategory: activeCategory.id,
+        });
+      };
+    });
+  }
+
+  render() {
+    const { categories, loading, error, filters } = this.state;
+    const { cartId, cart, cartItems, productsInfo } = this.props;
+    if (!filters) {
+      return null;
+    }
+    return (
+      <header className="header">
+        <div className="top-menu">
+          <div className="wrapper">
+            <ul className="top-menu__items">
+              <li className="top-menu__item">
+                <a href="">Возврат</a>
+              </li>
+              <li className="top-menu__item">
+                <a href="">Доставка и оплата</a>
+              </li>
+              <li className="top-menu__item">
+                <a href="">О магазине</a>
+              </li>
+              <li className="top-menu__item">
+                <a href="">Контакты</a>
+              </li>
+              <li className="top-menu__item">
+                <a href="">Новости</a>
+              </li>
+            </ul>
+          </div>
+        </div>
+        <div className="header-main">
+          <div className="header-main__wrapper wrapper">
+            <div className="header-main__phone">
+              <a href="tel:+7-495-790-35-03">+7 495 79 03 5 03</a>
+              <p>Ежедневно: с 09-00 до 21-00</p>
+            </div>
+            <div className="header-main__logo">
+              <Link to="/">
+                <h1>
+                  <img src={logo} alt="logotype" />
+                </h1>
+              </Link>
+              <p>Обувь и аксессуары для всей семьи</p>
+            </div>
+            <div className="header-main__profile">
+              <div className="header-main__pics">
+                <div
+                  onClick={headerMainSearchVisibility}
+                  className="header-main__pic header-main__pic_search"
+                />
+                <div className="header-main__pic_border" />
+
+                <div
+                  className="header-main__pic header-main__pic_profile"
+                  onClick={headerHiddenPanelProfileVisibility}
+                >
+                  <div className="header-main__pic_profile_menu" />
+                </div>
+
+                <div className="header-main__pic_border" />
+                <div
+                  onClick={headerHiddenPanelBasketVisibility}
+                  className="header-main__pic header-main__pic_basket"
+                >
+                  <div
+                    className="header-main__pic_basket_full"
+                    style={
+                      this.props.cartItems
+                        ? { display: 'block' }
+                        : { display: 'none' }
+                    }
+                  >
+                    {this.props.cartItems}
+                  </div>
+                  <div className="header-main__pic_basket_menu" />
+                </div>
+              </div>
+              <form
+                className="header-main__search"
+                onSubmit={event => {
+                  event.preventDefault();
+                  return (window.location.href = `/catalog?search=${
+                    this.search.value
+                  }`);
+                }}
+              >
+                <input placeholder="Поиск" ref={elem => (this.search = elem)} />
+                <i className="fa fa-search" aria-hidden="true" />
+              </form>
+            </div>
+          </div>
+        </div>
+        <div className="header-main__hidden-panel hidden-panel">
+          <div className="hidden-panel__profile hidden-panel__profile_visible">
+            <a href="">Личный кабинет</a>
+            <Link to="/favourite/" onClick={headerHiddenPanelProfileVisibility}>
+              <i className="fa fa-heart-o" aria-hidden="true" />
+              Избранное
+            </Link>
+            <a href="">Выйти</a>
+          </div>
+
+          <div className="hidden-panel__basket basket-dropped hidden-panel__basket_visible">
+            {cart.length ? (
+              <Cart
+                cart={this.props.cart}
+                productsInfo={this.props.productsInfo}
+                cartId={this.props.cartId}
+                emptyCart={this.props.emptyCart}
+                changeCart={this.props.changeCart}
+                fetchProductsInfo={this.props.fetchProductsInfo}
+              />
+            ) : (
+              <div className="product-list__item">
+                <p>
+                  В корзине пока ничего нет. Не знаете, с чего начать?
+                  Посмотрите наши новинки!
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+
+        <nav className="main-menu">
+          <div className="wrapper">
+            <ul
+              className="main-menu__items"
+              ref={elem => (this.menuItem = elem)}
+            >
+              {categories.map(item => {
+                return (
+                  <li
+                    className="main-menu__item"
+                    onClick={mainSubmenuVisibility}
+                    key={item.id}
+                  >
+                    <a href="">{item.title}</a>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        </nav>
+
+        <DropdownMenu
+          filters={this.state.filters}
+          currentCategory={this.state.currentCategory}
+        />
+      </header>
+    );
+  }
+}
+
+export default Header;
